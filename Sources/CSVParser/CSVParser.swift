@@ -143,7 +143,7 @@ public class CSVParser {
         static let doubleQuote = Matcher("\"\"")
         
         @usableFromInline
-        static let textDataChar = Matcher(" "..."!") || Matcher("#"..."+") || Matcher("-"..."~") || Matcher("é") || Matcher("è") || Matcher("ô")
+        static let textDataChar = Matcher(" "..."!") || Matcher("#"..."+") || Matcher("-"..."~")
     }
         
     public enum ParserError: Error {
