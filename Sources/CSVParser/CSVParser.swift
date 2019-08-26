@@ -10,12 +10,68 @@ public class CSVParser {
     @usableFromInline
     var extractor: Extractor
     
-    @inlinable
-    public func parse() -> [[Substring]] {
-        var content = [parseLine()]
-        while extractor.popCurrent(with: Token.clrf) != nil {
-            content.append(parseLine())
+    @inlinable func parseColumns(options: ParsingOptions) throws -> [ReorderedCollection<[Substring]>] {
+        guard let expectedRows = options.expectedRows else {
+            fatalError("The parseColumn method requires expectedRows to be non-nil")
         }
+        guard expectedRows.isEmpty == false else {
+            fatalError("The parseColumn method requires expectedRows to be non-empty")
+        }
+        
+        let rawParsed = try rawParse(options: options)
+        
+        let indexes = expectedRows.map { row in
+            rawParsed.first!.firstIndex(where: { $0 == row })!
+        }
+        
+        return rawParsed.map { ReorderedCollection($0, order: indexes) }
+    }
+    
+    @inlinable
+    public func rawParse(options: ParsingOptions) throws -> [[Substring]] {
+        let firstRow = parseLine()
+        var content = [firstRow]
+        
+        // If there are expected rows, validate them
+        if let expectedRows = options.expectedRows {
+            if options.allowsNonExhaustiveRows {
+                guard expectedRows.count <= firstRow.count  else {
+                    throw ParserError.notEnoughColumnsInCSV
+                }
+            } else {
+                guard expectedRows.count == firstRow.count else {
+                    if expectedRows.count > firstRow.count {
+                        throw ParserError.notEnoughColumnsInCSV
+                    } else {
+                        throw ParserError.tooManyColumnsInCSV
+                    }
+                }
+            }
+            guard Set(firstRow.map(String.init)).isSuperset(of: expectedRows) else {
+                throw ParserError.missingColumns(columns: Set(expectedRows).subtracting(firstRow.map(String.init)))
+            }
+        }
+        
+        var index = 1
+        while extractor.popCurrent(with: Token.clrf) != nil {
+            let line = parseLine()
+            guard line.count == firstRow.count else {
+                throw ParserError.unevenSize(firstErrorRowIndex: index)
+            }
+            content.append(line)
+            index += 1
+        }
+        
+        // Check that size is correct everywhere
+        let firstSize = content.first?.count ?? 0
+        for (index, row) in content.enumerated() {
+            if row.count == firstSize {
+                continue
+            } else {
+                throw ParserError.unevenSize(firstErrorRowIndex: index)
+            }
+        }
+        
         return content
     }
     
@@ -72,6 +128,29 @@ public class CSVParser {
         
         @usableFromInline
         static let textDataChar = Matcher(" "..."!") || Matcher("#"..."+") || Matcher("-"..."~") || Matcher("é") || Matcher("è") || Matcher("ô")
+    }
+        
+    public enum ParserError: Error {
+        case unevenSize(firstErrorRowIndex: Int)
+        case missingColumns(columns: Set<String>)
+        case notEnoughColumnsInCSV
+        case tooManyColumnsInCSV
+    }
+    
+    public struct ParsingOptions {
+        /// This allows defining rows that are expected to be present
+        public var expectedRows: [String]? = nil
+        
+        /// Defines wether or not it is accepted that the file contains more
+        /// rows than what's present in the `rows` array
+        public var allowsNonExhaustiveRows = true
+    }
+    
+    public struct RowView {
+        
+        subscript(columnName: String) -> Substring {
+            fatalError()
+        }
     }
     
 }
