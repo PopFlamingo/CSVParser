@@ -10,7 +10,7 @@ public class CSVParser {
     @usableFromInline
     var extractor: Extractor
     
-    @inlinable func parseColumns(options: ParsingOptions) throws -> [ReorderedCollection<[Substring]>] {
+    @inlinable func parseColumns(options: ValidationOptions) throws -> [ReorderedCollection<[Substring]>] {
         guard let expectedRows = options.expectedRows else {
             fatalError("The parseColumn method requires expectedRows to be non-nil")
         }
@@ -28,7 +28,7 @@ public class CSVParser {
     }
     
     @inlinable
-    public func rawParse(options: ParsingOptions) throws -> [[Substring]] {
+    public func rawParse(options: ValidationOptions) throws -> [[Substring]] {
         let firstRow = parseLine()
         
         var content: [[Substring]]
@@ -152,7 +152,7 @@ public class CSVParser {
         case additionalColumns(columns: Set<String>)
     }
     
-    public struct ParsingOptions {
+    public struct ValidationOptions {
         /// This allows defining rows that are expected to be present
         public var expectedRows: [String]? = nil
         

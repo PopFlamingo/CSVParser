@@ -3,7 +3,7 @@ import XCTest
 
 final class CSVParserTests: XCTestCase {
     
-    let defaultOptions = CSVParser.ParsingOptions()
+    let defaultOptions = CSVParser.ValidationOptions()
     
     /// Ensures that default options values stay the same
     func testDefaultOptions() {
