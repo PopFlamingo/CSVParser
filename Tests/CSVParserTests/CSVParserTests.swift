@@ -4,6 +4,7 @@ import XCTest
 final class CSVParserTests: XCTestCase {
     
     let defaultOptions = CSVParser.ValidationOptions()
+    let defaultParser = CSVParser(validationOptions: CSVParser.ValidationOptions())
     
     /// Ensures that default options values stay the same
     func testDefaultOptions() {
@@ -12,8 +13,7 @@ final class CSVParserTests: XCTestCase {
     }
     
     func testParseEmpty() throws {
-        let result = try CSVParser(string: "").rawParse(options: defaultOptions)
-        XCTAssertEqual(result, [[Substring]]())
+        XCTAssertEqual(try defaultParser.rawParse(string: ""), [[Substring]]())
     }
     
     func testParseEmptyEndline() throws {
@@ -21,7 +21,7 @@ final class CSVParserTests: XCTestCase {
         a,b,c\r
         
         """
-        let result = try CSVParser(string: csv).rawParse(options: defaultOptions)
+        let result = try defaultParser.rawParse(string: csv)
         XCTAssertEqual(result.count, 1)
         
         let csvMultipleEmptyEndlines = """
@@ -29,24 +29,24 @@ final class CSVParserTests: XCTestCase {
         \r
         
         """
-        let result2 = try CSVParser(string: csvMultipleEmptyEndlines).rawParse(options: defaultOptions)
+        let result2 = try defaultParser.rawParse(string: csvMultipleEmptyEndlines)
         XCTAssertEqual(result2.count, 1)
         
         let csvNoEndlineCr = """
         a,b,c
         
         """
-        let result3 = try CSVParser(string: csvNoEndlineCr).rawParse(options: defaultOptions)
+        let result3 = try defaultParser.rawParse(string: csvNoEndlineCr)
         XCTAssertEqual(result3.count, 1)
         //FIXME: This is a rather special case so it should be tested further
         XCTAssertEqual(result3.first, ["a","b","c"])
     }
     
     func testSingle() throws {
-        let result = try CSVParser(string: "a").rawParse(options: defaultOptions)
+        let result = try defaultParser.rawParse(string: "a")
         XCTAssertEqual(result, [["a"]])
         
-        let quotedResult = try CSVParser(string: "\"a\"").rawParse(options: defaultOptions)
+        let quotedResult = try defaultParser.rawParse(string: "\"a\"")
         XCTAssertEqual(quotedResult, [["a"]])
     }
     
@@ -54,13 +54,13 @@ final class CSVParserTests: XCTestCase {
         let nonQuoted = """
         a,b,c
         """
-        let result = try CSVParser(string: nonQuoted).rawParse(options: defaultOptions)
+        let result = try defaultParser.rawParse(string: nonQuoted)
         XCTAssertEqual(result, [["a","b","c"]])
         
         let quoted = """
         "a","b","c"
         """
-        let result2 = try CSVParser(string: quoted).rawParse(options: defaultOptions)
+        let result2 = try defaultParser.rawParse(string: quoted)
         XCTAssertEqual(result2, [["a","b","c"]])
     }
     
@@ -69,14 +69,14 @@ final class CSVParserTests: XCTestCase {
         a,b,c,
         d,e,f
         """
-        let result = try CSVParser(string: csvNewLine).rawParse(options: defaultOptions)
+        let result = try defaultParser.rawParse(string: csvNewLine)
         XCTAssertNotEqual(result, [["a","b","c","\nd","e","f"]])
         
         let csvQuotedNewLine = """
         "a","b","c","
         d","e","f"
         """
-        let result2 = try CSVParser(string: csvQuotedNewLine).rawParse(options: defaultOptions)
+        let result2 = try defaultParser.rawParse(string: csvQuotedNewLine)
         XCTAssertEqual(result2, [["a","b","c","\nd","e","f"]])
     }
     

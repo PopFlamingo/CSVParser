@@ -3,22 +3,27 @@ import ParserBuilder
 public class CSVParser {
     
     @inlinable
-    public init(string: String) {
-        self.extractor = Extractor(string)
+    public init(validationOptions: ValidationOptions) {
+        self.extractor = Extractor("")
+        self.validationOptions = validationOptions
     }
     
     @usableFromInline
     var extractor: Extractor
     
-    @inlinable func parseColumns(options: ValidationOptions) throws -> [ReorderedCollection<[Substring]>] {
-        guard let expectedRows = options.expectedRows else {
+    @usableFromInline
+    var validationOptions: ValidationOptions
+    
+    @inlinable public func parseColumns(string: String) throws -> [ReorderedCollection<[Substring]>] {
+        self.extractor = Extractor(string)
+        guard let expectedRows = validationOptions.expectedRows else {
             fatalError("The parseColumn method requires expectedRows to be non-nil")
         }
         guard expectedRows.isEmpty == false else {
             fatalError("The parseColumn method requires expectedRows to be non-empty")
         }
         
-        let rawParsed = try rawParse(options: options)
+        let rawParsed = try rawParse(string: string)
         
         let indexes = expectedRows.map { row in
             rawParsed.first!.firstIndex(where: { $0 == row })!
@@ -28,7 +33,8 @@ public class CSVParser {
     }
     
     @inlinable
-    public func rawParse(options: ValidationOptions) throws -> [[Substring]] {
+    public func rawParse(string: String) throws -> [[Substring]] {
+        self.extractor = Extractor(string)
         let firstRow = parseLine()
         
         var content: [[Substring]]
@@ -39,8 +45,8 @@ public class CSVParser {
         }
         
         // If there are expected rows, validate them
-        if let expectedRows = options.expectedRows {
-            if options.allowsNonExhaustiveRows {
+        if let expectedRows = validationOptions.expectedRows {
+            if validationOptions.allowsNonExhaustiveRows {
                 guard expectedRows.count <= firstRow.count  else {
                     throw ParserError.missingColumns(columns: Set(expectedRows).subtracting(firstRow.map(String.init)))
                 }
