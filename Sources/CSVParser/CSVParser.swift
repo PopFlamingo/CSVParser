@@ -30,7 +30,13 @@ public class CSVParser {
     @inlinable
     public func rawParse(options: ParsingOptions) throws -> [[Substring]] {
         let firstRow = parseLine()
-        var content = [firstRow]
+        
+        var content: [[Substring]]
+        if firstRow.isEmpty {
+            content = []
+        } else {
+            content = [firstRow]
+        }
         
         // If there are expected rows, validate them
         if let expectedRows = options.expectedRows {
@@ -55,6 +61,9 @@ public class CSVParser {
         var index = 1
         while extractor.popCurrent(with: Token.clrf) != nil {
             let line = parseLine()
+            guard line.isEmpty == false else {
+                break
+            }
             guard line.count == firstRow.count else {
                 throw ParserError.unevenSize(firstErrorRowIndex: index)
             }
@@ -77,16 +86,23 @@ public class CSVParser {
     
     @inlinable
     func parseLine() -> [Substring] {
-        var all = [parseField()]
+        var all: [Substring]
+        if let firstField = parseField() {
+            all = [firstField]
+        } else {
+            all = []
+        }
         while extractor.popCurrent(with: Token.comma) != nil {
-            all.append(parseField())
+            if let parsedField = parseField() {
+                all.append(parsedField)
+            }
         }
         return all
     }
     
     @inlinable
-    func parseField() -> Substring {
-        parseNonEscaped() ?? parseEscaped() ?? ""
+    func parseField() -> Substring? {
+        parseNonEscaped() ?? parseEscaped()
     }
     
     @inlinable
