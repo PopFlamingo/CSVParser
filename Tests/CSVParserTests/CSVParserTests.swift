@@ -90,6 +90,6 @@ final class CSVParserTests: XCTestCase {
         ("testParseEmptyEndline", testParseEmptyEndline),
         ("testSingle", testSingle),
         ("testBasic", testBasic),
-        ("testParseDoesntConfuseNewLines", testParseLinereturns)
+        ("testParseLinereturns", testParseLinereturns)
     ]
 }
