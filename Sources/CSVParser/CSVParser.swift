@@ -42,14 +42,14 @@ public class CSVParser {
         if let expectedRows = options.expectedRows {
             if options.allowsNonExhaustiveRows {
                 guard expectedRows.count <= firstRow.count  else {
-                    throw ParserError.notEnoughColumnsInCSV
+                    throw ParserError.missingColumns(columns: Set(expectedRows).subtracting(firstRow.map(String.init)))
                 }
             } else {
                 guard expectedRows.count == firstRow.count else {
                     if expectedRows.count > firstRow.count {
-                        throw ParserError.notEnoughColumnsInCSV
+                        throw ParserError.missingColumns(columns: Set(expectedRows).subtracting(firstRow.map(String.init)))
                     } else {
-                        throw ParserError.tooManyColumnsInCSV
+                        throw ParserError.additionalColumns(columns: Set(firstRow.map(String.init)).subtracting(expectedRows))
                     }
                 }
             }
@@ -149,8 +149,7 @@ public class CSVParser {
     public enum ParserError: Error {
         case unevenSize(firstErrorRowIndex: Int)
         case missingColumns(columns: Set<String>)
-        case notEnoughColumnsInCSV
-        case tooManyColumnsInCSV
+        case additionalColumns(columns: Set<String>)
     }
     
     public struct ParsingOptions {
