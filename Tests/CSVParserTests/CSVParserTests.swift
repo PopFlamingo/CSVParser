@@ -122,6 +122,15 @@ final class CSVParserTests: XCTestCase {
         }
     }
     
+    func testParseEmptyNonEmptyMix() throws  {
+        let example = """
+        a,b,\r
+        ,,\r
+        c,d,e
+        """
+        XCTAssertEqual(try defaultParser.rawParse(string: example), [["a", "b", ""], ["","",""], ["c","d","e"]])
+    }
+    
     static var allTests = [
         ("testDefaultOptions", testDefaultOptions),
         ("testParseEmpty", testParseEmpty),
@@ -129,6 +138,7 @@ final class CSVParserTests: XCTestCase {
         ("testSingle", testSingle),
         ("testBasic", testBasic),
         ("testParseLinereturns", testParseLinereturns),
-        ("testParseBadSyntax", testParseBadSyntax)
+        ("testParseBadSyntax", testParseBadSyntax),
+        ("testParseEmptyNonEmptyMix", testParseEmptyNonEmptyMix)
     ]
 }
