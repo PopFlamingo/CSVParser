@@ -87,23 +87,36 @@ public class CSVParser {
             }
         }
         
+        
+        // Get to end of file
+        extractor.popCurrent(with: (Token.cr || Token.newLine || Token.clrf || Matcher(" ")).atLeast(0))
+        guard extractor.currentIndex == extractor.string.endIndex else {
+            throw ParserError.syntaxError(index: extractor.currentIndex)
+        }
+        
         return content
     }
     
     @inlinable
     func parseLine() -> [Substring] {
         var all: [Substring]
+        var acceptValues = true
         if let firstField = parseField() {
             all = [firstField]
         } else {
-            all = []
+            acceptValues = false
+            all = [""]
         }
+        
         while extractor.popCurrent(with: Token.comma) != nil {
+            acceptValues = true
             if let parsedField = parseField() {
                 all.append(parsedField)
+            } else {
+                all.append("")
             }
         }
-        return all
+        return acceptValues ? all : []
     }
     
     @inlinable
@@ -156,6 +169,7 @@ public class CSVParser {
         case unevenSize(firstErrorRowIndex: Int)
         case missingColumns(columns: Set<String>)
         case additionalColumns(columns: Set<String>)
+        case syntaxError(index: String.Index)
     }
     
     public struct ValidationOptions {

@@ -14,6 +14,9 @@ final class CSVParserTests: XCTestCase {
     
     func testParseEmpty() throws {
         XCTAssertEqual(try defaultParser.rawParse(string: ""), [[Substring]]())
+        XCTAssertEqual(try defaultParser.rawParse(string: "\"\",\"\""), [["",""]])
+        XCTAssertEqual(try defaultParser.rawParse(string: ","), [["",""]])
+        XCTAssertEqual(try defaultParser.rawParse(string: ",,"), [["","",""]])
     }
     
     func testParseEmptyEndline() throws {
@@ -21,7 +24,7 @@ final class CSVParserTests: XCTestCase {
         a,b,c\r
         
         """
-        let result = try defaultParser.rawParse(string: csv)
+        let result = try! defaultParser.rawParse(string: csv)
         XCTAssertEqual(result.count, 1)
         
         let csvMultipleEmptyEndlines = """
@@ -29,7 +32,7 @@ final class CSVParserTests: XCTestCase {
         \r
         
         """
-        let result2 = try defaultParser.rawParse(string: csvMultipleEmptyEndlines)
+        let result2 = try! defaultParser.rawParse(string: csvMultipleEmptyEndlines)
         XCTAssertEqual(result2.count, 1)
         
         let csvNoEndlineCr = """
@@ -69,8 +72,7 @@ final class CSVParserTests: XCTestCase {
         a,b,c,
         d,e,f
         """
-        let result = try defaultParser.rawParse(string: csvNewLine)
-        XCTAssertNotEqual(result, [["a","b","c","\nd","e","f"]])
+        XCTAssertThrowsError(try defaultParser.rawParse(string: csvNewLine))
         
         let csvQuotedNewLine = """
         "a","b","c","
@@ -80,8 +82,12 @@ final class CSVParserTests: XCTestCase {
         XCTAssertEqual(result2, [["a","b","c","\nd","e","f"]])
     }
     
-    func testParseMalformed() {
-        
+    func testParseBadSyntax() {
+        XCTAssertThrowsError(try defaultParser.rawParse(string: "🐞"))
+        XCTAssertThrowsError(try defaultParser.rawParse(string: "🐞,🐞"))
+        XCTAssertThrowsError(try defaultParser.rawParse(string: "a,🐞"))
+        XCTAssertThrowsError(try defaultParser.rawParse(string: "a🐞,🐞"))
+        XCTAssertThrowsError(try defaultParser.rawParse(string: "\"🐞\",\"🐞\""))
     }
 
     static var allTests = [
@@ -90,6 +96,7 @@ final class CSVParserTests: XCTestCase {
         ("testParseEmptyEndline", testParseEmptyEndline),
         ("testSingle", testSingle),
         ("testBasic", testBasic),
-        ("testParseLinereturns", testParseLinereturns)
+        ("testParseLinereturns", testParseLinereturns),
+        ("testParseBadSyntax", testParseBadSyntax)
     ]
 }
