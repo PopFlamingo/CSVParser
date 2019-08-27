@@ -3,13 +3,17 @@ import ParserBuilder
 public class CSVParser {
     
     @inlinable
-    public init(validationOptions: ValidationOptions) {
+    public init(parsingOptions: ParsingOptions, validationOptions: ValidationOptions = .init()) {
         self.extractor = Extractor("")
+        self.parsingOptions = parsingOptions
         self.validationOptions = validationOptions
     }
     
     @usableFromInline
     var extractor: Extractor
+    
+    @usableFromInline
+    var parsingOptions: ParsingOptions
     
     @usableFromInline
     var validationOptions: ValidationOptions
@@ -65,7 +69,7 @@ public class CSVParser {
         }
         
         var index = 1
-        while extractor.popCurrent(with: Token.clrf) != nil {
+        while extractor.popCurrent(with: parsingOptions.endOfLine) != nil {
             let line = parseLine()
             guard line.isEmpty == false else {
                 break
@@ -89,7 +93,8 @@ public class CSVParser {
         
         
         // Get to end of file
-        extractor.popCurrent(with: (Token.cr || Token.newLine || Token.clrf || Matcher(" ")).atLeast(0))
+        // FIXME: Include this in the parsing options
+        extractor.popCurrent(with: ("\r" || "\n" || "\r\n" || Matcher(" ")).atLeast(0))
         guard extractor.currentIndex == extractor.string.endIndex else {
             throw ParserError.syntaxError(index: extractor.currentIndex)
         }
@@ -108,7 +113,7 @@ public class CSVParser {
             all = [""]
         }
         
-        while extractor.popCurrent(with: Token.comma) != nil {
+        while extractor.popCurrent(with: parsingOptions.separator) != nil {
             acceptValues = true
             if let parsedField = parseField() {
                 all.append(parsedField)
@@ -126,9 +131,9 @@ public class CSVParser {
     
     @inlinable
     func parseEscaped() -> Substring? {
-        let escapedContent = (Token.textDataChar || Token.comma || Token.cr || Token.newLine || Token.doubleQuote).atLeast(0)
+        let escapedContent = (parsingOptions.unescapedContent || parsingOptions.separator || parsingOptions.quotedNewlines || parsingOptions.quote.count(2)).atLeast(0)
         
-        guard extractor.popCurrent(with: Token.quote) != nil else {
+        guard extractor.popCurrent(with: parsingOptions.quote) != nil else {
             return nil
         }
         
@@ -136,7 +141,7 @@ public class CSVParser {
             return nil
         }
         
-        guard extractor.popCurrent(with: Token.quote) != nil else {
+        guard extractor.popCurrent(with: parsingOptions.quote) != nil else {
             return nil
         }
         
@@ -145,31 +150,7 @@ public class CSVParser {
     
     @inlinable
     func parseNonEscaped() -> Substring? {
-        extractor.popCurrent(with: Token.textDataChar.atLeast(1))
-    }
-    
-    @usableFromInline
-    struct Token {
-        @usableFromInline
-        static let comma = Matcher(",")
-        
-        @usableFromInline
-        static let clrf = Matcher("\r\n")
-        
-        @usableFromInline
-        static let cr = Matcher("\r")
-        
-        @usableFromInline
-        static let newLine = Matcher("\n")
-        
-        @usableFromInline
-        static let quote = Matcher("\"")
-        
-        @usableFromInline
-        static let doubleQuote = Matcher("\"\"")
-        
-        @usableFromInline
-        static let textDataChar = Matcher(" "..."!") || Matcher("#"..."+") || Matcher("-"..."~")
+        extractor.popCurrent(with: parsingOptions.unescapedContent.atLeast(1))
     }
         
     public enum ParserError: Error {
@@ -179,13 +160,48 @@ public class CSVParser {
         case syntaxError(index: String.Index)
     }
     
+    public struct ParsingOptions {
+        
+        /// Parse the file according to RFC 4180
+        ///
+        /// This will not accept any non-ASCII characters in the file
+        public static let RFC4180 = ParsingOptions(
+            endOfLine: "\r\n",
+            unescapedContent: Matcher(" "..."!") || Matcher("#"..."+") || Matcher("-"..."~"),
+            separator: ",",
+            quote: "\"",
+            quotedNewlines: "\n" || "\r"
+        )
+        
+        @usableFromInline
+        var endOfLine: Matcher
+        
+        @usableFromInline
+        var unescapedContent: Matcher
+        
+        @usableFromInline
+        var separator: Matcher
+        
+        @usableFromInline
+        var quote: Matcher
+        
+        @usableFromInline
+        var quotedNewlines: Matcher
+    }
+    
     public struct ValidationOptions {
+        
+        public init() {
+            self.expectedRows = nil
+            self.allowsNonExhaustiveRows = true
+        }
+        
         /// This allows defining rows that are expected to be present
-        public var expectedRows: [String]? = nil
+        public var expectedRows: [String]?
         
         /// Defines wether or not it is accepted that the file contains more
         /// rows than what's present in the `rows` array
-        public var allowsNonExhaustiveRows = true
+        public var allowsNonExhaustiveRows: Bool
     }
     
     public struct RowView {

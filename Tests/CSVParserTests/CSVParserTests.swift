@@ -4,7 +4,7 @@ import XCTest
 final class CSVParserTests: XCTestCase {
     
     let defaultOptions = CSVParser.ValidationOptions()
-    let defaultParser = CSVParser(validationOptions: CSVParser.ValidationOptions())
+    let defaultParser = CSVParser(parsingOptions: .RFC4180)
     
     /// Ensures that default options values stay the same
     func testDefaultOptions() {
