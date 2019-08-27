@@ -83,13 +83,45 @@ final class CSVParserTests: XCTestCase {
     }
     
     func testParseBadSyntax() {
-        XCTAssertThrowsError(try defaultParser.rawParse(string: "🐞"))
-        XCTAssertThrowsError(try defaultParser.rawParse(string: "🐞,🐞"))
-        XCTAssertThrowsError(try defaultParser.rawParse(string: "a,🐞"))
-        XCTAssertThrowsError(try defaultParser.rawParse(string: "a🐞,🐞"))
-        XCTAssertThrowsError(try defaultParser.rawParse(string: "\"🐞\",\"🐞\""))
+        XCTAssertThrowsError(try defaultParser.rawParse(string: "🐞")) { error in
+            guard case CSVParser.ParserError.syntaxError(index: let index) = error else {
+                return XCTFail("This should be a syntax error")
+            }
+            XCTAssertEqual(index, "🐞".startIndex)
+        }
+        
+        XCTAssertThrowsError(try defaultParser.rawParse(string: "🐞,🐞")) { error in
+            guard case CSVParser.ParserError.syntaxError(index: let index) = error else {
+                return XCTFail("This should be a syntax error")
+            }
+            XCTAssertEqual(index, "🐞,🐞".startIndex)
+        }
+        
+        let validAndInvalid = "a,🐞"
+        XCTAssertThrowsError(try defaultParser.rawParse(string: validAndInvalid)) { error in
+            guard case CSVParser.ParserError.syntaxError(index: let index) = error else {
+                return XCTFail("This should be a syntax error")
+            }
+            XCTAssertEqual(index, validAndInvalid.index(validAndInvalid.startIndex, offsetBy: 2))
+        }
+        
+        let validAndInvalid2 = "a🐞,🐞"
+        XCTAssertThrowsError(try defaultParser.rawParse(string: validAndInvalid2)) { error in
+            guard case CSVParser.ParserError.syntaxError(index: let index) = error else {
+                return XCTFail("This should be a syntax error")
+            }
+            XCTAssertEqual(index, validAndInvalid2.index(validAndInvalid2.startIndex, offsetBy: 1))
+        }
+        
+        let quotedInvalid = "\"🐞\",\"🐞\""
+        XCTAssertThrowsError(try defaultParser.rawParse(string: quotedInvalid)) { error in
+            guard case CSVParser.ParserError.syntaxError(index: let index) = error else {
+                return XCTFail("This should be a syntax error")
+            }
+            XCTAssertEqual(index, quotedInvalid.index(quotedInvalid.startIndex, offsetBy: 1))
+        }
     }
-
+    
     static var allTests = [
         ("testDefaultOptions", testDefaultOptions),
         ("testParseEmpty", testParseEmpty),

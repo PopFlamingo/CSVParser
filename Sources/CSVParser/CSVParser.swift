@@ -127,13 +127,20 @@ public class CSVParser {
     @inlinable
     func parseEscaped() -> Substring? {
         let escapedContent = (Token.textDataChar || Token.comma || Token.cr || Token.newLine || Token.doubleQuote).atLeast(0)
-        if let escaped = extractor.popCurrent(with: Token.quote + escapedContent + Token.quote) {
-            let second = escaped.index(after: escaped.startIndex)
-            let beforeLast = escaped.index(before: escaped.endIndex)
-            return Substring(escaped[second..<beforeLast].replacingOccurrences(of: "\"\"", with: "\""))
-        } else {
+        
+        guard extractor.popCurrent(with: Token.quote) != nil else {
             return nil
         }
+        
+        guard let content = extractor.popCurrent(with: escapedContent) else {
+            return nil
+        }
+        
+        guard extractor.popCurrent(with: Token.quote) != nil else {
+            return nil
+        }
+        
+        return Substring(content.replacingOccurrences(of: "\"\"", with: "\""))
     }
     
     @inlinable
