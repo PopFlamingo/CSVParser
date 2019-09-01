@@ -182,6 +182,16 @@ public class CSVParser {
             quotedNewlines: "\n" || "\r"
         )
         
+       
+        
+        public static let special = ParsingOptions(
+            endOfLine: "\r\n",
+            unescapedContent:  Matcher(" "..."!") || Matcher("#"..."+") || Matcher("-"..."~") || Matcher("é") || Matcher("è") || Matcher("ô"),
+            separator: ",",
+            quote: "\"",
+            quotedNewlines: "\n" || "\r"
+        )
+        
         @usableFromInline
         var endOfLine: Matcher
         
