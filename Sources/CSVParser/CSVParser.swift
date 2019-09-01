@@ -145,7 +145,17 @@ public class CSVParser {
             return nil
         }
         
-        return Substring(content.replacingOccurrences(of: "\"\"", with: "\""))
+        var new = Substring("")
+        var index = content.startIndex
+        while index != content.endIndex {
+            if content[index] == "\"", case let next = content.index(after: index), next != content.endIndex && content[next] == "\"" {
+                new.append("\"")
+            } else {
+                new.append(content[index])
+            }
+            index = content.index(after: index)
+        }
+        return new
     }
     
     @inlinable
