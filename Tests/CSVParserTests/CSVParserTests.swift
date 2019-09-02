@@ -153,6 +153,8 @@ final class CSVParserTests: XCTestCase {
         XCTAssertEqual(view[2,"foo"], "a")
         XCTAssertEqual(view[2,"bar"], "b")
         XCTAssertEqual(view[2,"baz"], "c")
+        
+        XCTAssertNil(view[0,"abc"])
     }
     
     static var allTests = [
