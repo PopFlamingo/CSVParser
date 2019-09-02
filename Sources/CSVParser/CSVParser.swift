@@ -4,10 +4,9 @@ import ParserBuilder
 public class CSVParser {
     
     @inlinable
-    public init(parsingOptions: ParsingOptions, validationOptions: ValidationOptions = .init()) {
+    public init(parsingOptions: ParsingOptions) {
         self.extractor = Extractor("")
         self.parsingOptions = parsingOptions
-        self.validationOptions = validationOptions
     }
     
     @usableFromInline
@@ -15,27 +14,6 @@ public class CSVParser {
     
     @usableFromInline
     var parsingOptions: ParsingOptions
-    
-    @usableFromInline
-    var validationOptions: ValidationOptions
-    
-    @inlinable public func parseColumns(string: String) throws -> [ReorderedCollection<[Substring]>] {
-        self.extractor = Extractor(string)
-        guard let expectedRows = validationOptions.expectedRows else {
-            fatalError("The parseColumn method requires expectedRows to be non-nil")
-        }
-        guard expectedRows.isEmpty == false else {
-            fatalError("The parseColumn method requires expectedRows to be non-empty")
-        }
-        
-        let rawParsed = try rawParse(string: string)
-        
-        let indexes = expectedRows.map { row in
-            rawParsed.first!.firstIndex(where: { $0 == row })!
-        }
-        
-        return rawParsed.map { ReorderedCollection($0, order: indexes) }
-    }
     
     @inlinable
     public func rawParse(string: String) throws -> [[Substring]] {
@@ -48,27 +26,7 @@ public class CSVParser {
         } else {
             content = [firstRow]
         }
-        
-        // If there are expected rows, validate them
-        if let expectedRows = validationOptions.expectedRows {
-            if validationOptions.allowsNonExhaustiveRows {
-                guard expectedRows.count <= firstRow.count  else {
-                    throw ParserError.missingColumns(columns: Set(expectedRows).subtracting(firstRow.map(String.init)))
-                }
-            } else {
-                guard expectedRows.count == firstRow.count else {
-                    if expectedRows.count > firstRow.count {
-                        throw ParserError.missingColumns(columns: Set(expectedRows).subtracting(firstRow.map(String.init)))
-                    } else {
-                        throw ParserError.additionalColumns(columns: Set(firstRow.map(String.init)).subtracting(expectedRows))
-                    }
-                }
-            }
-            guard Set(firstRow.map(String.init)).isSuperset(of: expectedRows) else {
-                throw ParserError.missingColumns(columns: Set(expectedRows).subtracting(firstRow.map(String.init)))
-            }
-        }
-        
+
         var index = 1
         while extractor.popCurrent(with: parsingOptions.endOfLine) != nil {
             let line = parseLine()
@@ -197,28 +155,6 @@ public class CSVParser {
         
         @usableFromInline
         var quotedNewlines: Matcher
-    }
-    
-    public struct ValidationOptions {
-        
-        public init() {
-            self.expectedRows = nil
-            self.allowsNonExhaustiveRows = true
-        }
-        
-        /// This allows defining rows that are expected to be present
-        public var expectedRows: [String]?
-        
-        /// Defines wether or not it is accepted that the file contains more
-        /// rows than what's present in the `rows` array
-        public var allowsNonExhaustiveRows: Bool
-    }
-    
-    public struct RowView {
-        
-        subscript(columnName: String) -> Substring {
-            fatalError()
-        }
     }
     
 }

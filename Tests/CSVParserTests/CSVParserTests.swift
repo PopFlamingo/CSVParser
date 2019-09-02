@@ -3,14 +3,7 @@ import XCTest
 
 final class CSVParserTests: XCTestCase {
     
-    let defaultOptions = CSVParser.ValidationOptions()
     let defaultParser = CSVParser(parsingOptions: .RFC4180)
-    
-    /// Ensures that default options values stay the same
-    func testDefaultOptions() {
-        XCTAssertEqual(defaultOptions.allowsNonExhaustiveRows, true)
-        XCTAssertEqual(defaultOptions.expectedRows, nil)
-    }
     
     func testParseEmpty() throws {
         XCTAssertEqual(try defaultParser.rawParse(string: ""), [[Substring]]())
@@ -143,7 +136,6 @@ final class CSVParserTests: XCTestCase {
     }
     
     static var allTests = [
-        ("testDefaultOptions", testDefaultOptions),
         ("testParseEmpty", testParseEmpty),
         ("testParseEmptyEndline", testParseEmptyEndline),
         ("testSingle", testSingle),
@@ -151,6 +143,6 @@ final class CSVParserTests: XCTestCase {
         ("testParseLinereturns", testParseLinereturns),
         ("testParseBadSyntax", testParseBadSyntax),
         ("testParseEmptyNonEmptyMix", testParseEmptyNonEmptyMix),
-        ("testParseUnicodeCSV", testParseUnicodeCSV)
+        ("testParseUnicodeCSV", testParseUnicodeCSV),
     ]
 }
