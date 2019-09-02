@@ -12,6 +12,14 @@ final class CSVParserTests: XCTestCase {
         XCTAssertEqual(defaultOptions.expectedRows, nil)
     }
     
+    func testParseWeird() throws {
+        let csv = """
+        a,b,c
+        d,e,f
+        """
+        print(try CSVParser(parsingOptions: .unicode).rawParse(string: csv))
+    }
+    
     func testParseEmpty() throws {
         XCTAssertEqual(try defaultParser.rawParse(string: ""), [[Substring]]())
         XCTAssertEqual(try defaultParser.rawParse(string: "\"\",\"\""), [["",""]])

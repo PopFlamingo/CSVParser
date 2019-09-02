@@ -185,8 +185,8 @@ public class CSVParser {
         
         /// Based on RFC 4180 except it also accepts non-ASCII characters
         public static let unicode = ParsingOptions(
-            endOfLine: "\r\n",
-            unescapedContent: (Matcher.anyCharacter && !("\"" || "," || "\n" || "\r" || "\r\n" )),
+            endOfLine: "\n",
+            unescapedContent: (Matcher.anyCharacter && !("\"" || "," || "\n" || "\r")),
             separator: ",",
             quote: "\"",
             quotedNewlines: "\n" || "\r"
