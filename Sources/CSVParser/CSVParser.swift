@@ -16,7 +16,7 @@ public class CSVParser {
     var parsingOptions: ParsingOptions
     
     @inlinable
-    public func rawParse(string: String) throws -> [[Substring]] {
+    public func parse(string: String) throws -> [[Substring]] {
         self.extractor = Extractor(string)
         let firstRow = parseLine()
         
