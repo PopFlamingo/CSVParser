@@ -62,6 +62,11 @@ public class CSVParser {
     }
     
     @inlinable
+    public func parseNamedCells(string: String) throws -> CSVNamedCellsView {
+        return try CSVNamedCellsView(wrapped: self.parse(string: string))
+    }
+    
+    @inlinable
     func parseLine() -> [Substring] {
         var all: [Substring]
         var acceptValues = true
@@ -157,4 +162,36 @@ public class CSVParser {
         var quotedNewlines: Matcher
     }
     
+}
+
+public struct CSVNamedCellsView {
+    
+    @usableFromInline
+    init(wrapped: [[Substring]]) {
+        self.wrapped = wrapped
+        self.orderer = [:]
+        if let first = wrapped.first {
+            for (index,column) in first.enumerated() {
+                orderer[String(column)] = index
+            }
+        }
+    }
+    
+    let wrapped: [[Substring]]
+    var orderer: [String:Int]
+    
+    subscript(rowIndex: Int, column: String) -> Substring? {
+        get {
+            precondition(wrapped.isEmpty == false, "The CSV data has no rows")
+            if let actualIndex = orderer[column] {
+                return wrapped[rowIndex][actualIndex]
+            } else {
+                return nil
+            }
+        }
+    }
+    
+    var rowCount: Int {
+        wrapped.count
+    }
 }

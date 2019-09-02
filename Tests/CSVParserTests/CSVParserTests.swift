@@ -135,6 +135,26 @@ final class CSVParserTests: XCTestCase {
         XCTAssertEqual(try unicodeParser.parse(string: emojis), [["🍨","🥮","🍳"],["🥨","a🌽","🌶"],["🥑","🍅","🥭"], ["", "🥗🍕\n🚄", "🗽"]])
     }
     
+    func testParseNamedCells() throws {
+        let csv = """
+        foo,bar,baz\r
+        1,2,3\r
+        a,b,c
+        """
+        let view = try defaultParser.parseNamedCells(string: csv)
+        XCTAssertEqual(view[0,"foo"], "foo")
+        XCTAssertEqual(view[0,"bar"], "bar")
+        XCTAssertEqual(view[0,"baz"], "baz")
+        
+        XCTAssertEqual(view[1,"foo"], "1")
+        XCTAssertEqual(view[1,"bar"], "2")
+        XCTAssertEqual(view[1,"baz"], "3")
+        
+        XCTAssertEqual(view[2,"foo"], "a")
+        XCTAssertEqual(view[2,"bar"], "b")
+        XCTAssertEqual(view[2,"baz"], "c")
+    }
+    
     static var allTests = [
         ("testParseEmpty", testParseEmpty),
         ("testParseEmptyEndline", testParseEmptyEndline),
@@ -144,5 +164,6 @@ final class CSVParserTests: XCTestCase {
         ("testParseBadSyntax", testParseBadSyntax),
         ("testParseEmptyNonEmptyMix", testParseEmptyNonEmptyMix),
         ("testParseUnicodeCSV", testParseUnicodeCSV),
+        ("testParseNamedCells", testParseNamedCells)
     ]
 }
