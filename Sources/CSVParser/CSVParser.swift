@@ -3,10 +3,39 @@ import ParserBuilder
 
 public class CSVParser {
     
+    @usableFromInline
+    let goToEnd: Matcher = ("\r" || "\n" || "\r\n" || Matcher(" ")).atLeast(0).optimize()
+    
+    @usableFromInline
+    let escapedContent: Matcher
+    
+    @usableFromInline
+    let unescapedContent: Matcher
+    
     @inlinable
     public init(parsingOptions: ParsingOptions) {
         self.extractor = Extractor("")
-        self.parsingOptions = parsingOptions
+        let optimizedEndOfLine = parsingOptions.endOfLine
+        optimizedEndOfLine.optimize()
+        let optimizedUnescapedContent = parsingOptions.unescapedContent
+        optimizedUnescapedContent.optimize()
+        let optimizedSeparator = parsingOptions.separator
+        optimizedSeparator.optimize()
+        let optimizedQuote = parsingOptions.quote
+        optimizedQuote.optimize()
+        let optimizedQuotedNewline = parsingOptions.quotedNewlines
+        optimizedQuotedNewline.optimize()
+        
+        
+        self.parsingOptions = ParsingOptions(
+            endOfLine: optimizedEndOfLine,
+            unescapedContent: optimizedUnescapedContent,
+            separator: optimizedSeparator,
+            quote: optimizedQuote,
+            quotedNewlines: optimizedQuotedNewline)
+        
+        self.escapedContent = (self.parsingOptions.unescapedContent || self.parsingOptions.separator || self.parsingOptions.quotedNewlines || self.parsingOptions.quote.count(2)).atLeast(0).optimize()
+        self.unescapedContent = self.parsingOptions.unescapedContent.atLeast(1).optimize()
     }
     
     @usableFromInline
@@ -53,7 +82,7 @@ public class CSVParser {
         
         // Get to end of file
         // FIXME: Include this in the parsing options
-        extractor.popCurrent(with: ("\r" || "\n" || "\r\n" || Matcher(" ")).atLeast(0))
+        extractor.popCurrent(with: goToEnd)
         guard extractor.currentIndex == extractor.string.endIndex else {
             throw ParserError.syntaxError(index: extractor.currentIndex)
         }
@@ -95,7 +124,6 @@ public class CSVParser {
     
     @inlinable
     func parseEscaped() -> Substring? {
-        let escapedContent = (parsingOptions.unescapedContent || parsingOptions.separator || parsingOptions.quotedNewlines || parsingOptions.quote.count(2)).atLeast(0)
         
         guard extractor.popCurrent(with: parsingOptions.quote) != nil else {
             return nil
@@ -114,7 +142,7 @@ public class CSVParser {
     
     @inlinable
     func parseNonEscaped() -> Substring? {
-        extractor.popCurrent(with: parsingOptions.unescapedContent.atLeast(1))
+        extractor.popCurrent(with: )
     }
         
     public enum ParserError: Error {
@@ -125,6 +153,14 @@ public class CSVParser {
     }
     
     public struct ParsingOptions {
+        @inlinable
+        init(endOfLine: Matcher, unescapedContent: Matcher, separator: Matcher, quote: Matcher, quotedNewlines: Matcher) {
+            self.endOfLine = endOfLine
+            self.unescapedContent = unescapedContent
+            self.separator = separator
+            self.quote = quote
+            self.quotedNewlines = quotedNewlines
+        }
         
         /// Parse the file according to RFC 4180
         ///
@@ -140,7 +176,7 @@ public class CSVParser {
         /// Based on RFC 4180 except it also accepts non-ASCII characters
         public static let unicode = ParsingOptions(
             endOfLine: "\r\n",
-            unescapedContent: (Matcher.anyCharacter && !("\"" || "," || "\n" || "\r" || "\r\n" )),
+            unescapedContent: (Matcher.any() && !("\"" || "," || "\n" || "\r" || "\r\n" )),
             separator: ",",
             quote: "\"",
             quotedNewlines: "\n" || "\r"

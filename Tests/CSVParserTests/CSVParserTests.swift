@@ -17,7 +17,7 @@ final class CSVParserTests: XCTestCase {
         a,b,c\r
         
         """
-        let result = try! defaultParser.parse(string: csv)
+        let result = try defaultParser.parse(string: csv)
         XCTAssertEqual(result.count, 1)
         
         let csvMultipleEmptyEndlines = """
