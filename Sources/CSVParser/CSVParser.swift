@@ -4,45 +4,82 @@ import ParserBuilder
 public class CSVParser {
     
     @usableFromInline
-    let goToEnd: Matcher = ("\r" || "\n" || "\r\n" || Matcher(" ")).atLeast(0).optimize()
+    let goToEnd: MatcherKind
     
     @usableFromInline
-    let escapedContent: Matcher
+    let wholeEscapedContent: MatcherKind
     
     @usableFromInline
-    let unescapedContent: Matcher
+    let wholeUnescapedContent: MatcherKind
+    
+    @usableFromInline
+    let endOfLine: MatcherKind
+    
+    @usableFromInline
+    let unescapedContent: MatcherKind
+    
+    @usableFromInline
+    let separator: MatcherKind
+    
+    @usableFromInline
+    let quote: MatcherKind
+    
+    @usableFromInline
+    let quotedNewLines: MatcherKind
     
     @inlinable
     public init(parsingOptions: ParsingOptions) {
         self.extractor = Extractor("")
-        let optimizedEndOfLine = parsingOptions.endOfLine
-        optimizedEndOfLine.optimize()
-        let optimizedUnescapedContent = parsingOptions.unescapedContent
-        optimizedUnescapedContent.optimize()
-        let optimizedSeparator = parsingOptions.separator
-        optimizedSeparator.optimize()
-        let optimizedQuote = parsingOptions.quote
-        optimizedQuote.optimize()
-        let optimizedQuotedNewline = parsingOptions.quotedNewlines
-        optimizedQuotedNewline.optimize()
         
+        if let optimizedEndOfLine = parsingOptions.endOfLine.optimized() {
+            self.endOfLine = .optimized(optimizedEndOfLine)
+        } else {
+            self.endOfLine = .standard(parsingOptions.endOfLine)
+        }
         
-        self.parsingOptions = ParsingOptions(
-            endOfLine: optimizedEndOfLine,
-            unescapedContent: optimizedUnescapedContent,
-            separator: optimizedSeparator,
-            quote: optimizedQuote,
-            quotedNewlines: optimizedQuotedNewline)
+        if let optimizedUnescapedContent = parsingOptions.unescapedContent.optimized() {
+            self.unescapedContent = .optimized(optimizedUnescapedContent)
+        } else {
+            self.unescapedContent = .standard(parsingOptions.unescapedContent)
+        }
         
-        self.escapedContent = (self.parsingOptions.unescapedContent || self.parsingOptions.separator || self.parsingOptions.quotedNewlines || self.parsingOptions.quote.count(2)).atLeast(0).optimize()
-        self.unescapedContent = self.parsingOptions.unescapedContent.atLeast(1).optimize()
+        if let optimizedSeparator = parsingOptions.separator.optimized() {
+            self.separator = .optimized(optimizedSeparator)
+        } else {
+            self.separator = .standard(parsingOptions.separator)
+        }
+        
+        if let optimizedQuote = parsingOptions.quote.optimized() {
+            self.quote = .optimized(optimizedQuote)
+        } else {
+            self.quote = .standard(parsingOptions.quote)
+        }
+        
+        if let optimizedQuotedNewLines = parsingOptions.quotedNewlines.optimized() {
+            self.quotedNewLines = .optimized(optimizedQuotedNewLines)
+        } else {
+            self.quotedNewLines = .standard(parsingOptions.quotedNewlines)
+        }
+        
+        self.goToEnd = .optimized(("\r" || "\n" || "\r\n" || Matcher(" ")).atLeast(0).optimized()!)
+        
+        let preOptiEscaped = (parsingOptions.unescapedContent || parsingOptions.separator || parsingOptions.quotedNewlines || parsingOptions.quote.count(2)).atLeast(0)
+        if let optimized = preOptiEscaped.optimized() {
+            self.wholeEscapedContent = .optimized(optimized)
+        } else {
+            self.wholeEscapedContent = .standard(preOptiEscaped)
+        }
+        
+        let preOptiUnescaped = parsingOptions.unescapedContent.atLeast(1)
+        if let optimized = preOptiUnescaped.optimized() {
+            self.wholeUnescapedContent = .optimized(optimized)
+        } else {
+            self.wholeUnescapedContent = .standard(preOptiUnescaped)
+        }
     }
     
     @usableFromInline
     var extractor: Extractor
-    
-    @usableFromInline
-    var parsingOptions: ParsingOptions
     
     @inlinable
     public func parse(string: String) throws -> [[Substring]] {
@@ -57,7 +94,7 @@ public class CSVParser {
         }
 
         var index = 1
-        while extractor.popCurrent(with: parsingOptions.endOfLine) != nil {
+        while extractor.popCurrent(with: endOfLine) != nil {
             let line = parseLine()
             guard line.isEmpty == false else {
                 break
@@ -106,7 +143,7 @@ public class CSVParser {
             all = [""]
         }
         
-        while extractor.popCurrent(with: parsingOptions.separator) != nil {
+        while extractor.popCurrent(with: separator) != nil {
             acceptValues = true
             if let parsedField = parseField() {
                 all.append(parsedField)
@@ -125,15 +162,15 @@ public class CSVParser {
     @inlinable
     func parseEscaped() -> Substring? {
         
-        guard extractor.popCurrent(with: parsingOptions.quote) != nil else {
+        guard extractor.popCurrent(with: quote) != nil else {
             return nil
         }
         
-        guard let content = extractor.popCurrent(with: escapedContent) else {
+        guard let content = extractor.popCurrent(with: wholeEscapedContent) else {
             return nil
         }
         
-        guard extractor.popCurrent(with: parsingOptions.quote) != nil else {
+        guard extractor.popCurrent(with: quote) != nil else {
             return nil
         }
         
@@ -142,7 +179,7 @@ public class CSVParser {
     
     @inlinable
     func parseNonEscaped() -> Substring? {
-        extractor.popCurrent(with: unescapedContent)
+        extractor.popCurrent(with: wholeUnescapedContent)
     }
         
     public enum ParserError: Error {
