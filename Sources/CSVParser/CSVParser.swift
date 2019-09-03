@@ -166,7 +166,7 @@ public class CSVParser {
 
 public struct CSVNamedCellsView {
     
-    @usableFromInline
+    @inlinable
     init(wrapped: [[Substring]]) {
         self.wrapped = wrapped
         self.orderer = [:]
@@ -177,10 +177,14 @@ public struct CSVNamedCellsView {
         }
     }
     
+    @usableFromInline
     let wrapped: [[Substring]]
+    
+    @usableFromInline
     var orderer: [String:Int]
     
-    subscript(rowIndex: Int, column: String) -> Substring? {
+    @inlinable
+    public subscript(rowIndex: Int, column: String) -> Substring? {
         get {
             precondition(wrapped.isEmpty == false, "The CSV data has no rows")
             if let actualIndex = orderer[column] {
@@ -191,7 +195,7 @@ public struct CSVNamedCellsView {
         }
     }
     
-    var rowCount: Int {
+    public var rowCount: Int {
         wrapped.count
     }
 }
