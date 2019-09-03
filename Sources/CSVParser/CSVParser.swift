@@ -142,7 +142,7 @@ public class CSVParser {
     
     @inlinable
     func parseNonEscaped() -> Substring? {
-        extractor.popCurrent(with: )
+        extractor.popCurrent(with: unescapedContent)
     }
         
     public enum ParserError: Error {
