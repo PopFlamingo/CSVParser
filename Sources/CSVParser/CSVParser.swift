@@ -30,52 +30,14 @@ public class CSVParser {
     @inlinable
     public init(parsingOptions: ParsingOptions) {
         self.extractor = Extractor("")
-        
-        if let optimizedEndOfLine = parsingOptions.endOfLine.optimized() {
-            self.endOfLine = .optimized(optimizedEndOfLine)
-        } else {
-            self.endOfLine = .standard(parsingOptions.endOfLine)
-        }
-        
-        if let optimizedUnescapedContent = parsingOptions.unescapedContent.optimized() {
-            self.unescapedContent = .optimized(optimizedUnescapedContent)
-        } else {
-            self.unescapedContent = .standard(parsingOptions.unescapedContent)
-        }
-        
-        if let optimizedSeparator = parsingOptions.separator.optimized() {
-            self.separator = .optimized(optimizedSeparator)
-        } else {
-            self.separator = .standard(parsingOptions.separator)
-        }
-        
-        if let optimizedQuote = parsingOptions.quote.optimized() {
-            self.quote = .optimized(optimizedQuote)
-        } else {
-            self.quote = .standard(parsingOptions.quote)
-        }
-        
-        if let optimizedQuotedNewLines = parsingOptions.quotedNewlines.optimized() {
-            self.quotedNewLines = .optimized(optimizedQuotedNewLines)
-        } else {
-            self.quotedNewLines = .standard(parsingOptions.quotedNewlines)
-        }
-        
-        self.goToEnd = .optimized(("\r" || "\n" || "\r\n" || Matcher(" ")).atLeast(0).optimized()!)
-        
-        let preOptiEscaped = (parsingOptions.unescapedContent || parsingOptions.separator || parsingOptions.quotedNewlines || parsingOptions.quote.count(2)).atLeast(0)
-        if let optimized = preOptiEscaped.optimized() {
-            self.wholeEscapedContent = .optimized(optimized)
-        } else {
-            self.wholeEscapedContent = .standard(preOptiEscaped)
-        }
-        
-        let preOptiUnescaped = parsingOptions.unescapedContent.atLeast(1)
-        if let optimized = preOptiUnescaped.optimized() {
-            self.wholeUnescapedContent = .optimized(optimized)
-        } else {
-            self.wholeUnescapedContent = .standard(preOptiUnescaped)
-        }
+        self.endOfLine = parsingOptions.endOfLine.optimized()
+        self.unescapedContent = parsingOptions.unescapedContent.optimized()
+        self.separator = parsingOptions.separator.optimized()
+        self.quote = parsingOptions.quote.optimized()
+        self.quotedNewLines = parsingOptions.quotedNewlines.optimized()
+        self.goToEnd = ("\r" || "\n" || "\r\n" || Matcher(" ")).atLeast(0).optimized()
+        self.wholeEscapedContent = (parsingOptions.unescapedContent || parsingOptions.separator || parsingOptions.quotedNewlines || parsingOptions.quote.count(2)).atLeast(0).optimized()
+        self.wholeUnescapedContent = parsingOptions.unescapedContent.atLeast(1).optimized()
     }
     
     @usableFromInline
