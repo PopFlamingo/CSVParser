@@ -175,7 +175,7 @@ public class CSVParser {
         /// Based on RFC 4180 except it also accepts non-ASCII characters
         public static let unicode = ParsingOptions(
             endOfLine: "\r\n",
-            unescapedContent: (Matcher.any() && !("\"" || "," || "\n" || "\r" || "\r\n" )),
+            unescapedContent: Matcher(" "..."!") || Matcher("#"..."+") || Matcher("-"..."~") || (Matcher.any() && !("\"" || "," || "\n" || "\r" || "\r\n" )),
             separator: ",",
             quote: "\"",
             quotedNewlines: "\n" || "\r"
